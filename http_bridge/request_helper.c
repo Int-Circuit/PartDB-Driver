@@ -7,9 +7,7 @@ int request_helper(CURL *curl, request_t request, request_type_t type) {
   char *returnURl = NULL;
   responseBuffer_t responseChunks = {0};
   struct curl_slist *header = NULL;
-  curl_easy_setopt(curl, CURLOPT_URL, NULL);
-  curl_easy_setopt(curl, CURLOPT_HTTPGET, 0L);       // Reset GET flag
-  curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, NULL); // Reset custom method
+
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, NULL);   // Clear POST data
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, NULL);   
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&responseChunks);
@@ -20,8 +18,8 @@ int request_helper(CURL *curl, request_t request, request_type_t type) {
   }
   switch (type) {
   case DELETE:
-    header = curl_slist_append(header, "Content-Length: 0");  // Explicitly no body
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+    curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
     curl_easy_setopt(
         curl, CURLOPT_URL,
         url_constructor(confOpts.url, request.type, request.id, type));
