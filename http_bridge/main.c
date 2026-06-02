@@ -1,12 +1,9 @@
 #include "libs.h"
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
 bool configDone = false;
-int ConsumeHTTPS(CURL *curl, request_t input, request_type_t type) {
+int consumeHTTPS(CURL *curl, request_t input, requestType_t type, fileLoadOpts_t options) {
 
   if (!configDone) {
-    if (config(curl) != EXIT_SUCCESS) {
+    if (config(curl, options) != EXIT_SUCCESS) {
       fprintf(stderr, "HTTP configuration failed");
       curl_easy_cleanup(curl);
       return 1;
@@ -14,7 +11,8 @@ int ConsumeHTTPS(CURL *curl, request_t input, request_type_t type) {
       configDone = true;
     
   }
-  request_helper(curl, input, type);
+  requestHelper(curl, input, type, options);
+  dictPreProcess();
 
   return 0;
 }

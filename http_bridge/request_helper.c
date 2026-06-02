@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-int request_helper(CURL *curl, request_t request, request_type_t type) {
-  fileLoadOpts_t confOpts;
+int requestHelper(CURL *curl, request_t request, requestType_t type, fileLoadOpts_t confOpts) {
+
   char *returnURl = NULL;
   responseBuffer_t responseChunks = {0};
   struct curl_slist *header = NULL;
@@ -11,11 +11,7 @@ int request_helper(CURL *curl, request_t request, request_type_t type) {
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, NULL);   // Clear POST data
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, NULL);   
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&responseChunks);
-  if (loader(CONF_FILE, &confOpts) != EXIT_SUCCESS) {
-    free(confOpts.url);
-    perror("Failed to parse conf file, one or more values are empty");
-    abort();
-  }
+
   switch (type) {
   case DELETE:
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
@@ -85,7 +81,7 @@ free:
 
   return 0;
 }
-char *urlConstructor(char *url, char *type, char *id, request_type_t reqType) {
+char *urlConstructor(char *url, char *type, char *id, requestType_t reqType) {
   char *returnData = NULL;
   if (!url || !type) {
     fprintf(stderr, "URl or type is null");
@@ -106,7 +102,7 @@ char *urlConstructor(char *url, char *type, char *id, request_type_t reqType) {
   return returnData;
 }
 
-char *requestConstructor(request_t input, request_type_t type) {
+char *requestConstructor(request_t input, requestType_t type) {
   char *pOutput = NULL;
 
   switch (type) {

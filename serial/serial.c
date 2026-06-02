@@ -1,5 +1,5 @@
 #include "libs.h"
-int ConsumeSerial()
+int consumeSerial()
 {
 
     return 0;
