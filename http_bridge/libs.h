@@ -45,6 +45,10 @@ struct request {
   char *manufacturerProductNumber;
   char *tags;
 };
+struct response
+{
+
+};
 typedef struct request request_t;
 struct fileLoadOpts
 {
@@ -69,13 +73,13 @@ int config(CURL *curl);
 size_t write_chunk(void *data, size_t size, size_t nmemb, void *userData);
 int loader(const char *envFile, fileLoadOpts_t *options);
 //response_helper.c
-int response_formatter(responseBuffer_t input);
-int response_helper(cJSON* input);
+int responseFormatter(responseBuffer_t input);
+int responseHelper(cJSON* input);
 //request_helper.c
-int request_helper(CURL *curl, request_t request, request_type_t type);
-char *request_constructor(request_t input, request_type_t type);
-char* url_constructor(char *url, char* type, char* id, request_type_t reqType);
-
+int requestHelper(CURL *curl, request_t request, request_type_t type);
+char *requestConstructor(request_t input, request_type_t type);
+char* urlConstructor(char *url, char* type, char* id, request_type_t reqType);
+int dictPreProcess();
 // extern ;
 
 // helper functions

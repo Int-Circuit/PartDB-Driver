@@ -22,7 +22,7 @@ int request_helper(CURL *curl, request_t request, request_type_t type) {
     curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
     curl_easy_setopt(
         curl, CURLOPT_URL,
-        url_constructor(confOpts.url, request.type, request.id, type));
+        urlConstructor(confOpts.url, request.type, request.id, type));
     break;
 
   case GET_id:
@@ -30,15 +30,15 @@ int request_helper(CURL *curl, request_t request, request_type_t type) {
 
     curl_easy_setopt(
         curl, CURLOPT_URL,
-        url_constructor(confOpts.url, request.type, request.id, type));
+        urlConstructor(confOpts.url, request.type, request.id, type));
     break;
 
   case GET:
     curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
 
     asprintf(&returnURl, "%s%s",
-             url_constructor(confOpts.url, request.type, NULL, type),
-             request_constructor(request, type));
+             urlConstructor(confOpts.url, request.type, NULL, type),
+             requestConstructor(request, type));
     curl_easy_setopt(curl, CURLOPT_URL, returnURl);
 
     break;
@@ -47,21 +47,21 @@ int request_helper(CURL *curl, request_t request, request_type_t type) {
     header = curl_slist_append(header, "Content-Type: application/merge-patch+json");
     curl_easy_setopt(
         curl, CURLOPT_URL,
-        url_constructor(confOpts.url, request.type, request.id, type));
+        urlConstructor(confOpts.url, request.type, request.id, type));
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
 
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS,
-                     request_constructor(request, type));
+                     requestConstructor(request, type));
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
                  
     break;
   case POST:
    header = curl_slist_append(header, "Content-Type: application/ld+json");
     curl_easy_setopt(curl, CURLOPT_URL,
-                     url_constructor(confOpts.url, request.type, NULL, type));
+                     urlConstructor(confOpts.url, request.type, NULL, type));
 
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS,
-                     request_constructor(request, type));
+                     requestConstructor(request, type));
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
                  
 
@@ -79,13 +79,13 @@ int request_helper(CURL *curl, request_t request, request_type_t type) {
     return (int)result;
   }
   // printf("%s", responseChunks.response);
-  response_formatter(responseChunks);
+  responseFormatter(responseChunks);
 free:
   free(responseChunks.response);
 
   return 0;
 }
-char *url_constructor(char *url, char *type, char *id, request_type_t reqType) {
+char *urlConstructor(char *url, char *type, char *id, request_type_t reqType) {
   char *returnData = NULL;
   if (!url || !type) {
     fprintf(stderr, "URl or type is null");
@@ -106,7 +106,7 @@ char *url_constructor(char *url, char *type, char *id, request_type_t reqType) {
   return returnData;
 }
 
-char *request_constructor(request_t input, request_type_t type) {
+char *requestConstructor(request_t input, request_type_t type) {
   char *pOutput = NULL;
 
   switch (type) {
