@@ -13,7 +13,6 @@ int loader(const char *envFile, fileLoadOpts_t *options) {
   options->certLocation = calloc(TOKEN_MAX_SIZE, 1);
   if ((!options->url || !options->token || !options->certLocation)) {
     printf("Could not initialize memory\n");
-    return 1;
     goto flush_yaml;
   }
 
@@ -26,7 +25,6 @@ int loader(const char *envFile, fileLoadOpts_t *options) {
                         "/server/dict/isDictdwld %d ",
                         options->url, options->token, options->certLocation,
                         &options->SSLOn, &options->dictDwl);
-  // printf("DEBUG: URL = '%s'\n", options->url);
   if (count != 5) {
     fprintf(stderr, "Failed to parse Yaml config file\n");
     goto flush_yaml;

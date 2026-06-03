@@ -1,8 +1,14 @@
 #include <stdbool.h>
-enum utilOpsType {load = 0};
+enum utilOpsType {load_file = 0, write_file = 1};
 typedef enum utilOpsType utilOpsType_t;
 enum order { asc = 0, desc = 1 };
 typedef enum order order_t;
+struct fileWriteVal
+{
+  char* key;
+  char* value;
+};
+typedef struct fileWriteVal fileWriteVal_t ;
 struct fileLoadOpts
 {
     char* url;
