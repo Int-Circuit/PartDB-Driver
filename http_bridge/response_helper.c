@@ -14,11 +14,11 @@ int responseFormatter(responseBuffer_t input) {
     goto destroy;
   }
   res_out = cJSON_Print(response);
-  cJSON* info = cJSON_GetObjectItemCaseSensitive(response, "hydra:member");
-  char* info_out = cJSON_Print(info);
+  //cJSON* info = cJSON_GetObjectItemCaseSensitive(response, "hydra:member");
+  //char* info_out = cJSON_Print(info);
   printf("\n%s\n", res_out);
-  printf("\n%s\n",info_out);
-  free(info_out);
+  //printf("\n%s\n",info_out);
+  //free(info_out);
   //response_helper(response);
 
 destroy:
