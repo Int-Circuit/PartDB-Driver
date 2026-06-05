@@ -12,7 +12,6 @@ int consumeHTTPS(CURL *curl, request_t input, requestType_t type, fileLoadOpts_t
     
   }
   requestHelper(curl, input, type, options);
-  dictPreProcess();
 
   return 0;
 }

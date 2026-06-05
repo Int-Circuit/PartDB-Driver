@@ -5,12 +5,15 @@ int utilsOps(utilOpsType_t type, fileLoadOpts_t* options, fileWriteVal_t* values
         default:
             fprintf(stderr, "Error: Operation type %d is not valid", type);
             return EXIT_FAILURE;
-        case load_file:
+        case loadFile:
             loader(CONF_FILE, options);
             break;
-        case write_file:
+        case writeFile:
             writer(CONF_FILE, values);
             break;
+        case createDict:
+            dictPreProcess();
+            break;    
     }
     return EXIT_SUCCESS;
 }

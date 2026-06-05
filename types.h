@@ -1,5 +1,5 @@
 #include <stdbool.h>
-enum utilOpsType {load_file = 0, write_file = 1};
+enum utilOpsType {loadFile = 0, writeFile = 1, createDict = 2};
 typedef enum utilOpsType utilOpsType_t;
 enum order { asc = 0, desc = 1 };
 typedef enum order order_t;
