@@ -1,6 +1,6 @@
 #include "libs.h"
 int dictPreProcess() {
-    FILE* fp = fopen("docs.jsonopenapi", "r");  // Note: j'ai corrigé le nom du fichier (jsonopenapi → json)
+    FILE* fp = fopen("docs.jsonopenapi", "r");  
     FILE* write = fopen("write.json", "w");
 
     if (!fp || !write) {
