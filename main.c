@@ -3,7 +3,6 @@
 int main() {
   // Setup
   fileLoadOpts_t options = {0};
-  fileWriteVal_t values = {"/server/dict", "isDictdwld: 1"};
   CURLcode global_result = curl_global_init(CURL_GLOBAL_ALL);
   if (global_result != CURLE_OK) {
     fprintf(stderr, "curl_global_init() failed\n");
@@ -22,13 +21,14 @@ int main() {
     abort();
   }
   if (options.dictDwl != 1) {
+    fileWriteVal_t values = {"/server/dict", "isDictdwld: 1"};
     request_t dict = {.type = "docs.jsonopenapi"};
     consumeHTTPS(curl, dict, GET, options);
-
     utilsOps(createDict, NULL, NULL);
+    utilsOps(writeFile, NULL, &values);
   }
 
-  //utilsOps(writeFile, NULL, &values);
+  // utilsOps(writeFile, NULL, &values);
   request_t test = {.page = 1,
                     .type = "parts",
                     .itemsPerPage = 30,
@@ -68,7 +68,7 @@ int main() {
 
   // ConsumeHTTPS(curl, cat1, POST, options);
   //  ConsumeHTTPS(curl, test2, POST);
-  //consumeHTTPS(curl, test2, GET_id, options);
+  // consumeHTTPS(curl, test2, GET_id, options);
   // printf("\npatch\n");
   // ConsumeHTTPS(curl, test1, PATCH);
   // printf("\ndelete\n");
