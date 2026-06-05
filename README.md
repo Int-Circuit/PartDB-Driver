@@ -1,7 +1,8 @@
 **WARNING PROGRAM IS IN EARLY ALPHA**
 # Setup
-1. Run `make all`
-2. Creae a `conf.yaml` file at the root of the project with the contents
+1. Install libcurl, libfyaml and cJSON
+2. Run `make all`
+3. Creae a `conf.yaml` file at the root of the project with the contents
 ```
 server:
   url: # your server url (should end with */api)
@@ -20,4 +21,4 @@ server:
 serial:
   port:    
 ```
-3. 
+4. Run program. 
