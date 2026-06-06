@@ -16,12 +16,17 @@ int writer(const char *envFile, fileWriteVal_t* values)
     goto flush_yaml;
   }
   printf("Path: %s", fy_node_get_path(fy_node_by_path(fyn, values->key, -1, FYNWF_PTR_DEFAULT)));
-  if (fy_document_insert_at(fyd, fy_node_get_path(fy_node_by_path(fyn, values->key, -1, FYNWF_PTR_DEFAULT)), FYNT_SCALAR,  fy_node_buildf(fyd, "%s", values->value))) {
+ // if (fy_document_insert_at(fyd, "/server/dict", FY_NT,
+	 //   fy_node_buildf(fyd,
+	//	"isDictdwld: 1"))) {
+   if (fy_document_insert_at(fyd, fy_node_get_path(fy_node_by_path(fyn, values->key, -1, FYNWF_PTR_DEFAULT)), FY_NT,  fy_node_buildf(fyd, "%s", values->value))) {
     fprintf(stderr, "Failed to write file");
     goto flush_yaml;
   }
   	printf("\nUpdated configuration:\n");
-	if (fy_emit_document_to_fp(fyd, FYECF_DEFAULT, stdout)) {
+	//if (fy_emit_document_to_file(fyd, FYECF_DEFAULT | FYECF_SORT_KEYS, envFile)) {
+
+    if (fy_emit_document_to_fp(fyd, FYECF_DEFAULT, stdout)) {
 		fprintf(stderr, "Failed to emit document\n");
 		goto flush_yaml;
 	}
