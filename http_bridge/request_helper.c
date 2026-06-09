@@ -74,7 +74,7 @@ int requestHelper(CURL *curl, request_t request, requestType_t type, fileLoadOpt
     goto free;
     return (int)result;
   }
-  responseHelper(&responseChunks, confOpts);
+  responseHelper(&responseChunks, confOpts, type);
 free:
   free(responseChunks.response);
 

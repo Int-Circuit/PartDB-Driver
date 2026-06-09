@@ -35,12 +35,14 @@ destroy:
   return EXIT_FAILURE;
 }
 // utiliser le jsonopenapi
-int responseHelper(responseBuffer_t *input, fileLoadOpts_t confOpts) {
+int responseHelper(responseBuffer_t *input, fileLoadOpts_t confOpts, requestType_t type) {
   cJSON *response = NULL;
+  FILE *dict;
   if (!input) {
     fprintf(stderr, "Request response buffer empty");
     return EXIT_FAILURE;
   }
+
   if (responseFormatter(input, &response) != EXIT_SUCCESS) {
     return EXIT_FAILURE;
   }
@@ -50,19 +52,43 @@ int responseHelper(responseBuffer_t *input, fileLoadOpts_t confOpts) {
       fprintf(stderr, "Cannot open/create file to write");
       return EXIT_FAILURE;
     }
-    char *openAPIJSON = cJSON_Print(response);
-    if (!openAPIJSON) {
+    if (!cJSON_Print(response)) {
       fprintf(stderr, "JSON to string conversion of openAPI file failed");
       fclose(fp);
       cJSON_Delete(response);
       return EXIT_FAILURE;
     }
-    printf("\nj'ecris fichier");
-    fprintf(fp, "%s", openAPIJSON);
-    free(openAPIJSON);
+    fprintf(fp, "%s", cJSON_Print(response));
     fclose(fp);
   }
-  printf("\nj'ecris pas fichier");
+  dict = fopen("write.json", "r");
+  if (!dict) {
+    fprintf(stderr, "Could not open dictionary file, check presence.");
+    return EXIT_FAILURE;
+  }
+  // Get the file size
+  fseek(dict, 0, SEEK_END);
+  long fileSize = ftell(dict);
+  fseek(dict, 0, SEEK_SET);
+  // Read the entire dict into a buffer
+  char *buffer = (char *)malloc(fileSize + 1);
+  fread(buffer, 1, fileSize, dict);
+  buffer[fileSize] = '\0'; // Null-terminate the string
+  // Close the dict
+  fclose(dict);
+  // Parse the JSON data
+  cJSON *json = cJSON_Parse(buffer);
+  // Check if parsing was successful
+  if (json == NULL) {
+    const char *error_ptr = cJSON_GetErrorPtr();
+    if (error_ptr != NULL) {
+      fprintf(stderr, "Error before: %s\n", error_ptr);
+    }
+    cJSON_Delete(json);
+    free(buffer);
+    return EXIT_FAILURE;
+  }
+
 
   // fileLoadOpts_t confOpts = {0};
   // loader(CONF_FILE, &confOpts);

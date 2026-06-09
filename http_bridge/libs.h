@@ -35,7 +35,7 @@ size_t write_chunk(void *data, size_t size, size_t nmemb, void *userData);
 int loader(const char *envFile, fileLoadOpts_t *options);
 //response_helper.c
 int responseFormatter(responseBuffer_t* input, cJSON** output);
-int responseHelper(responseBuffer_t* input, fileLoadOpts_t confOpts);
+int responseHelper(responseBuffer_t* input, fileLoadOpts_t confOpts, requestType_t type);
 //request_helper.c
 int requestHelper(CURL *curl, request_t request, requestType_t type, fileLoadOpts_t confOpts);
 char *requestConstructor(request_t input, requestType_t type);
@@ -43,7 +43,7 @@ char* urlConstructor(char *url, char* type, char* id, requestType_t reqType);
 // extern ;
 
 // helper functions
-inline const char *enumToString(order_t order) {
+static inline const char *enumToString(order_t order) {
   switch (order) {
   case 0:
     return "asc";

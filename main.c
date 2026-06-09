@@ -26,6 +26,7 @@ int main() {
     consumeHTTPS(curl, dict, GET, options);
     utilsOps(createDict, NULL, NULL);
     utilsOps(writeFile, NULL, &values);
+    options.dictDwl = 1;
   }
 
   // utilsOps(writeFile, NULL, &values);
@@ -68,7 +69,7 @@ int main() {
 
   // ConsumeHTTPS(curl, cat1, POST, options);
   //  ConsumeHTTPS(curl, test2, POST);
-  // consumeHTTPS(curl, test2, GET_id, options);
+  consumeHTTPS(curl, test2, GET, options);
   // printf("\npatch\n");
   // ConsumeHTTPS(curl, test1, PATCH);
   // printf("\ndelete\n");
