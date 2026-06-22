@@ -36,6 +36,7 @@ int loader(const char *envFile, fileLoadOpts_t *options);
 //response_helper.c
 int responseFormatter(responseBuffer_t* input, cJSON** output);
 int responseHelper(responseBuffer_t* input, fileLoadOpts_t confOpts, requestType_t type);
+int JSONPathTraverser(cJSON* json, char* path, requestType_t type);
 //request_helper.c
 int requestHelper(CURL *curl, request_t request, requestType_t type, fileLoadOpts_t confOpts);
 char *requestConstructor(request_t input, requestType_t type);
