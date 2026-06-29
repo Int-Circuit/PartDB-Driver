@@ -1,32 +1,72 @@
 #include "libs.h"
 #include <cjson/cJSON.h>
+cJSON *dictJSONPathTraverser(cJSON *json, char *path) {
+
+  char *pathFindChar = NULL;
+  char targetChar = '.';
+  int pathDepth = 0;
+  char **pathArray;
+  char *pathTokenized = NULL;
+
+  // printf("%s", path);
+  pathFindChar = path;
+  // printf("%s", pathFindChar);
+  while ((pathFindChar = strchr(pathFindChar, targetChar)) != NULL) {
+    pathDepth++;
+    ++pathFindChar;
+  }
+  // printf("%s",pathFindChar);
+
+  // printf("\n%d", pathDepth);
+  pathArray = (char **)calloc(pathDepth + 1, sizeof(char *));
+  if (!pathArray) {
+    fprintf(stderr, "Failed to allocate Array");
+    goto destroy;
+    return NULL;
+  }
+
+  pathTokenized = strtok(path, ".");
+
+  for (int i = 0; i < pathDepth + 1 && pathTokenized; i++) {
+    pathArray[i] = strdup(pathTokenized);
+    if (!pathArray[i]) {
+      fprintf(stderr, "Failed to allocate Array element no %d", i);
+      goto destroy;
+      return NULL;
+    }
+    pathTokenized = strtok(NULL, ".");
+  }
+  cJSON *JSONContainer = json;
+  for (int i = 0; i < pathDepth + 1; i++) {
+    // printf("\n%s\n", pathArray[i]);
+    JSONContainer =
+        cJSON_GetObjectItemCaseSensitive(JSONContainer, pathArray[i]);
+    if (!JSONContainer) {
+      fprintf(stderr, "Failed to get JSON container for key: %s\n",
+              pathArray[i]);
+      break;
+    }
+  }
+
+destroy:
+  if (pathArray) {
+    for (int i = 0; i < pathDepth + 1; i++) {
+      free(pathArray[i]);
+    }
+  }
+  free(pathArray);
+  return JSONContainer;
+}
 int dictPreProcess() {
-  FILE *fp = fopen("docs.jsonopenapi", "r");
   FILE *write = fopen("write.json", "w");
 
-  if (!fp || !write) {
+  if (!write) {
     perror("Cannot open file");
     return EXIT_FAILURE;
   }
 
-  // 1. Lire le fichier
-  fseek(fp, 0, SEEK_END);
-  long fileSize = ftell(fp);
-  fseek(fp, 0, SEEK_SET);
-  char *buffer = (char *)malloc(fileSize + 1);
-  if (!buffer) {
-    perror("Memory allocation failed");
-    fclose(fp);
-    fclose(write);
-    return EXIT_FAILURE;
-  }
-  fread(buffer, 1, fileSize, fp);
-  buffer[fileSize] = '\0';
-  fclose(fp); // Fermer fp dès qu'on a fini de lire
-
   // 2. Parser le JSON
-  cJSON *json = cJSON_Parse(buffer);
-  free(buffer); // Libérer buffer dès qu'on a fini de parser
+  cJSON *json = cJSON_Parse(readJSON("docs.jsonopenapi"));
 
   if (!json) {
     const char *error_ptr = cJSON_GetErrorPtr();
@@ -38,16 +78,8 @@ int dictPreProcess() {
     return EXIT_FAILURE;
   }
 
-  // 3. Extraire "components"
-  cJSON *component = cJSON_GetObjectItemCaseSensitive(json, "components");
-  if (!component) {
-    fprintf(stderr, "Key 'components' not found in JSON\n");
-    cJSON_Delete(json);
-    fclose(write);
-    return EXIT_FAILURE;
-  }
   // 4. Convertir "components" en chaîne JSON et l'écrire
-  char *out = cJSON_Print(component);
+  char *out = cJSON_Print(dictJSONPathTraverser(json, "components"));
   if (!out) {
     fprintf(stderr, "Failed to print JSON\n");
     cJSON_Delete(json);

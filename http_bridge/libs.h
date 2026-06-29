@@ -25,7 +25,7 @@ int config(CURL *curl, fileLoadOpts_t options);
 size_t write_chunk(void *data, size_t size, size_t nmemb, void *userData);
 int loader(const char *envFile, fileLoadOpts_t *options);
 // response_helper.c
-int responseFormatter(responseBuffer_t *input, cJSON **output);
+char* responseFormatter(responseBuffer_t *input, cJSON **output);
 int responseHelper(responseBuffer_t *input, fileLoadOpts_t confOpts,
                    requestType_t type, char *requestPath);
 cJSON* JSONPathTraverser(cJSON *json, char *path, requestType_t type);
@@ -46,4 +46,25 @@ static inline const char *enumToString(order_t order) {
   default:
     return "asc";
   }
+}
+
+static inline const char* readJSON(char* filename)
+{  FILE *dict;
+
+    dict = fopen(filename, "r");
+  if (!dict) {
+    fprintf(stderr, "Could not open dictionary file, check presence.");
+    return NULL;
+  }
+  // Get the file size
+  fseek(dict, 0, SEEK_END);
+  long fileSize = ftell(dict);
+  fseek(dict, 0, SEEK_SET);
+  // Read the entire dict into a buffer
+  char *buffer = (char *)malloc(fileSize + 1);
+  fread(buffer, 1, fileSize, dict);
+  buffer[fileSize] = '\0'; // Null-terminate the string
+  // Close the dict
+  fclose(dict);
+  return buffer;
 }

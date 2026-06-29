@@ -15,7 +15,6 @@ int writer(const char *envFile, fileWriteVal_t* values)
     fprintf(stderr, "Failed to create YAML node, check if envFile isn't null");
     goto flush_yaml;
   }
-  printf("Path: %s", fy_node_get_path(fy_node_by_path(fyn, values->key, -1, FYNWF_PTR_DEFAULT)));
    if (fy_document_insert_at(fyd, fy_node_get_path(fy_node_by_path(fyn, values->key, -1, FYNWF_PTR_DEFAULT)), FY_NT,  fy_node_buildf(fyd, "%s", values->value))) {
     fprintf(stderr, "Failed to write file");
     goto flush_yaml;

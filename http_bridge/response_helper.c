@@ -26,19 +26,19 @@ char *JSONPathFormatter(char *requestPath) {
     if (strcmp(requestPath, AJL.APIPath[i]) == 0) {
 
       asprintf(&JSONFullPath, "%s.%s", "schemas", AJL.JSONKeys[i]);
-      printf("%s", JSONFullPath);
+      //printf("%s", JSONFullPath);
       return JSONFullPath;
     }
   }
   return NULL;
 }
 
-int responseFormatter(responseBuffer_t *input, cJSON **output) {
+char* responseFormatter(responseBuffer_t *input, cJSON **output) {
   *output = cJSON_CreateObject();
-  char *res_out = NULL;
+  char *charOutput = NULL;
   if (!input->response || !input) {
     fprintf(stderr, "Request response buffer empty");
-    return EXIT_FAILURE;
+    return NULL;
   }
   *output = cJSON_Parse(input->response);
   if (!*output) {
@@ -46,28 +46,34 @@ int responseFormatter(responseBuffer_t *input, cJSON **output) {
     fprintf(stderr, "Error %.30s", error);
     goto destroy;
   }
-  res_out = cJSON_Print(*output);
-  if (!res_out) {
+  charOutput = cJSON_Print(*output);
+  if (!charOutput) {
     fprintf(stderr, "JSON print failed");
     cJSON_Delete(*output);
     *output = NULL;
   }
-  return EXIT_SUCCESS;
+  char* charOutputStart = strchr(charOutput, '{');
+  char* CharOutputEnd = strrchr(charOutput, '}');
+  if (charOutputStart && CharOutputEnd && CharOutputEnd > charOutputStart) {
+    charOutputStart++;
+    *CharOutputEnd = '\0';
+    memmove(charOutput, charOutputStart, strlen(charOutputStart));
+  }
+  return charOutput;
 destroy:
-  free(res_out);
-  return EXIT_FAILURE;
+  free(charOutput);
+  return NULL;
 }
 // utiliser le jsonopenapi
 int responseHelper(responseBuffer_t *input, fileLoadOpts_t confOpts,
                    requestType_t type, char *requestPath) {
   cJSON *response = NULL;
-  FILE *dict;
   if (!input) {
     fprintf(stderr, "Request response buffer empty");
     return EXIT_FAILURE;
   }
-
-  if (responseFormatter(input, &response) != EXIT_SUCCESS) {
+  char* out = responseFormatter(input, &response);
+  if (!out) {
     return EXIT_FAILURE;
   }
   if (confOpts.dictDwl != 1) {
@@ -85,24 +91,18 @@ int responseHelper(responseBuffer_t *input, fileLoadOpts_t confOpts,
       return EXIT_FAILURE;
     }
     fclose(fp);
+    return EXIT_SUCCESS;
   }
-  dict = fopen("write.json", "r");
-  if (!dict) {
-    fprintf(stderr, "Could not open dictionary file, check presence.");
-    return EXIT_FAILURE;
+  printf("%s", out);
+  int outDepth;
+  char* outFind = out;
+  while ((outFind = strchr(outFind, ',')) != NULL) {
+    outDepth++;
+    ++outFind;
   }
-  // Get the file size
-  fseek(dict, 0, SEEK_END);
-  long fileSize = ftell(dict);
-  fseek(dict, 0, SEEK_SET);
-  // Read the entire dict into a buffer
-  char *buffer = (char *)malloc(fileSize + 1);
-  fread(buffer, 1, fileSize, dict);
-  buffer[fileSize] = '\0'; // Null-terminate the string
-  // Close the dict
-  fclose(dict);
+printf("%d", outDepth);
   // Parse the JSON data
-  cJSON *json = cJSON_Parse(buffer);
+  cJSON *json = cJSON_Parse(readJSON("write.json"));
   // Check if parsing was successful
   if (!json) {
     const char *error_ptr = cJSON_GetErrorPtr();
@@ -110,19 +110,18 @@ int responseHelper(responseBuffer_t *input, fileLoadOpts_t confOpts,
       fprintf(stderr, "Error before: %s\n", error_ptr);
     }
     cJSON_Delete(json);
-    free(buffer);
     return EXIT_FAILURE;
   }
 
   char *format = JSONPathFormatter(requestPath);
   if (!format) {
     printf("C null");
-    free(buffer);
     return EXIT_FAILURE;
   }
   if (JSONPathTraverser(json, format, type) != NULL) {
     char *res = cJSON_Print(JSONPathTraverser(json, format, type));
-    printf("%s", res);
+    //printf("\ndico\n");
+   // printf("%s", res);
   }
 
   // fileLoadOpts_t confOpts = {0};
@@ -133,7 +132,6 @@ int responseHelper(responseBuffer_t *input, fileLoadOpts_t confOpts,
 cJSON *JSONPathTraverser(cJSON *json, char *path, requestType_t type) {
   char *pathCopy;
   char *pathFindChar = NULL;
-  char targetChar = '.';
   int pathDepth = 0;
   char **pathArray;
   char *pathTokenized = NULL;
@@ -152,7 +150,7 @@ cJSON *JSONPathTraverser(cJSON *json, char *path, requestType_t type) {
   // printf("%s", path);
   pathFindChar = pathCopy;
   // printf("%s", pathFindChar);
-  while ((pathFindChar = strchr(pathFindChar, targetChar)) != NULL) {
+  while ((pathFindChar = strchr(pathFindChar, '.')) != NULL) {
     pathDepth++;
     ++pathFindChar;
   }
@@ -179,7 +177,7 @@ cJSON *JSONPathTraverser(cJSON *json, char *path, requestType_t type) {
   }
   cJSON *JSONContainer = json;
   for (int i = 0; i < pathDepth + 1; i++) {
-    printf("\n%s\n", pathArray[i]);
+    //printf("\n%s\n", pathArray[i]);
     JSONContainer =
         cJSON_GetObjectItemCaseSensitive(JSONContainer, pathArray[i]);
     if (!JSONContainer) {
@@ -188,7 +186,6 @@ cJSON *JSONPathTraverser(cJSON *json, char *path, requestType_t type) {
       break;
     }
 
-    // printf("\n%s\n", res);
   }
 
 destroy:
@@ -198,6 +195,5 @@ destroy:
     }
   }
   free(pathArray);
-  free(pathCopy);
   return JSONContainer;
 }

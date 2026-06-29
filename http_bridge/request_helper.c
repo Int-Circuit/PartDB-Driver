@@ -2,15 +2,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-int requestHelper(CURL *curl, request_t request, requestType_t type, fileLoadOpts_t confOpts) {
+int requestHelper(CURL *curl, request_t request, requestType_t type,
+                  fileLoadOpts_t confOpts) {
 
   char *returnURl = NULL;
   responseBuffer_t responseChunks = {0};
   struct curl_slist *header = NULL;
 
-  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, NULL);   // Clear POST data
-  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, NULL);   
+
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, NULL); // Clear POST data
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, NULL);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&responseChunks);
+
+  if (confOpts.dictDwl != 1) {
+  header = curl_slist_append(header, "Accept: application/vnd.openapi+json");
+  }
+  else {
+    header = curl_slist_append(header, "Accept: application/json");
+
+  }
 
   switch (type) {
   case DELETE:
@@ -40,7 +50,8 @@ int requestHelper(CURL *curl, request_t request, requestType_t type, fileLoadOpt
     break;
   case PATCH:
 
-    header = curl_slist_append(header, "Content-Type: application/merge-patch+json");
+    header =
+        curl_slist_append(header, "Content-Type: application/merge-patch+json");
     curl_easy_setopt(
         curl, CURLOPT_URL,
         urlConstructor(confOpts.url, request.type, request.id, type));
@@ -48,24 +59,23 @@ int requestHelper(CURL *curl, request_t request, requestType_t type, fileLoadOpt
 
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS,
                      requestConstructor(request, type));
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
-                 
+
     break;
   case POST:
-   header = curl_slist_append(header, "Content-Type: application/ld+json");
+    header = curl_slist_append(header, "Content-Type: application/json");
     curl_easy_setopt(curl, CURLOPT_URL,
                      urlConstructor(confOpts.url, request.type, NULL, type));
 
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS,
                      requestConstructor(request, type));
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
-                 
 
     break;
   default:
     fprintf(stderr, "Unknown request type: %d\n", type);
     return EXIT_FAILURE;
   }
+      curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
+
   // helper performs request
   CURLcode result = curl_easy_perform(curl);
   if (result != CURLE_OK) {
@@ -74,7 +84,7 @@ int requestHelper(CURL *curl, request_t request, requestType_t type, fileLoadOpt
     goto free;
     return (int)result;
   }
-  responseHelper(&responseChunks, confOpts, type);
+  responseHelper(&responseChunks, confOpts, type, request.type);
 free:
   free(responseChunks.response);
 
@@ -106,7 +116,7 @@ char *requestConstructor(request_t input, requestType_t type) {
 
   switch (type) {
   default:
-    printf("Request construction not required");  
+    printf("Request construction not required");
     break;
   case GET:
     // GET Request constructor
