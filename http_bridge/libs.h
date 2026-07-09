@@ -25,7 +25,7 @@ int config(CURL *curl, fileLoadOpts_t options);
 size_t write_chunk(void *data, size_t size, size_t nmemb, void *userData);
 int loader(const char *envFile, fileLoadOpts_t *options);
 // response_helper.c
-char* responseFormatter(responseBuffer_t *input, cJSON **output);
+char* responseFormatter(responseBuffer_t *input);
 int responseHelper(responseBuffer_t *input, fileLoadOpts_t confOpts,
                    requestType_t type, char *requestPath);
 cJSON* JSONPathTraverser(cJSON *json, char *path, requestType_t type);

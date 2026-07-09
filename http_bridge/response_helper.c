@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 
 struct APIJSONLink {
   const char *APIPath[2];
@@ -32,25 +33,59 @@ char *JSONPathFormatter(char *requestPath) {
   }
   return NULL;
 }
+char* DictDwl(responseBuffer_t* input)
+{
+    cJSON *output = cJSON_CreateObject();
+  char *charOutput = NULL;
+  if (!input) {
+    fprintf(stderr, "Request response buffer empty");
+    return NULL;
+  }
+  output = cJSON_Parse(input->response);
+  if (!output) {
+    const char *error = cJSON_GetErrorPtr();
+    fprintf(stderr, "Error %.30s", error);
+    free(output);
+  }
+  charOutput = cJSON_Print(output);
+  if (!charOutput) {
+    fprintf(stderr, "JSON print failed");
+    cJSON_Delete(output);
+    output = NULL;
+  }
+      FILE *fp = fopen("docs.jsonopenapi", "w");
+    if (!fp) {
+      fprintf(stderr, "Cannot open/create file to write");
+      return NULL;
+    }
+    fprintf(fp, "%s", cJSON_Print(output));
 
-char* responseFormatter(responseBuffer_t *input, cJSON **output) {
-  *output = cJSON_CreateObject();
+    if (!cJSON_Print(output)) {
+      fprintf(stderr, "JSON to string conversion of openAPI file failed");
+      fclose(fp);
+      cJSON_Delete(output);
+      return NULL;
+    }
+    fclose(fp);
+}
+char* responseFormatter(responseBuffer_t *input) {
+  cJSON *output = cJSON_CreateObject();
   char *charOutput = NULL;
   if (!input->response || !input) {
     fprintf(stderr, "Request response buffer empty");
     return NULL;
   }
-  *output = cJSON_Parse(input->response);
-  if (!*output) {
+  output = cJSON_Parse(input->response);
+  if (!output) {
     const char *error = cJSON_GetErrorPtr();
     fprintf(stderr, "Error %.30s", error);
     goto destroy;
   }
-  charOutput = cJSON_Print(*output);
+  charOutput = cJSON_Print(output);
   if (!charOutput) {
     fprintf(stderr, "JSON print failed");
-    cJSON_Delete(*output);
-    *output = NULL;
+    cJSON_Delete(output);
+    output = NULL;
   }
   char* charOutputStart = strchr(charOutput, '{');
   char* CharOutputEnd = strrchr(charOutput, '}');
@@ -59,6 +94,10 @@ char* responseFormatter(responseBuffer_t *input, cJSON **output) {
     *CharOutputEnd = '\0';
     memmove(charOutput, charOutputStart, strlen(charOutputStart));
   }
+  // for (int i = (strchr(charOutput, '"')) - charOutput; i < (strchr(charOutput, ',')) - charOutput; i++) {
+  //   printf("string found between %d and %d", )
+  // }
+
   return charOutput;
 destroy:
   free(charOutput);
@@ -67,40 +106,49 @@ destroy:
 // utiliser le jsonopenapi
 int responseHelper(responseBuffer_t *input, fileLoadOpts_t confOpts,
                    requestType_t type, char *requestPath) {
-  cJSON *response = NULL;
   if (!input) {
     fprintf(stderr, "Request response buffer empty");
     return EXIT_FAILURE;
   }
-  char* out = responseFormatter(input, &response);
-  if (!out) {
-    return EXIT_FAILURE;
-  }
-  if (confOpts.dictDwl != 1) {
-    FILE *fp = fopen("docs.jsonopenapi", "w");
-    if (!fp) {
-      fprintf(stderr, "Cannot open/create file to write");
-      return EXIT_FAILURE;
-    }
-    fprintf(fp, "%s", cJSON_Print(response));
-
-    if (!cJSON_Print(response)) {
-      fprintf(stderr, "JSON to string conversion of openAPI file failed");
-      fclose(fp);
-      cJSON_Delete(response);
-      return EXIT_FAILURE;
-    }
-    fclose(fp);
+    if (confOpts.dictDwl != 1) {
+    DictDwl(input);
     return EXIT_SUCCESS;
   }
+  char* out = responseFormatter(input);
+  if (!out) {
+     return EXIT_FAILURE;
+  }
+
   printf("%s", out);
   int outDepth;
-  char* outFind = out;
-  while ((outFind = strchr(outFind, ',')) != NULL) {
-    outDepth++;
-    ++outFind;
-  }
-printf("%d", outDepth);
+  //char* outFind = out;
+//   while ((outFind = strchr(outFind, ',')) != NULL) {
+//     outDepth++;
+//     ++outFind;
+//   }
+// char* outKeyBuffer[outDepth];
+// char* outValBuffer[outDepth];
+// char* tokenSave;
+// char* outTokenize = strtok_r(out, ",", &tokenSave);
+//  for (int i = 0; i < outDepth && outTokenize != NULL; i++) {
+//     char* split = strchr(outTokenize, ':');
+//     if (split != NULL) {
+//       *split = '\0';
+//       outKeyBuffer[i] = outTokenize;
+//       outValBuffer[i] = split + 1;
+//     }
+//     else {
+//       outKeyBuffer[i] = outTokenize;
+//       outValBuffer[i] = "";
+//     }
+//   outTokenize = strtok_r(NULL, ",", &tokenSave);
+   
+// //   outBuffer[i] = strdup(outTokenize);
+ 
+// //     outTokenize = strtok(NULL, ",");
+//     printf("\nKey: %s | Val: %s\n", outKeyBuffer[i], outValBuffer[i]);
+//  }
+
   // Parse the JSON data
   cJSON *json = cJSON_Parse(readJSON("write.json"));
   // Check if parsing was successful
