@@ -11,8 +11,8 @@ int requestHelper(CURL *curl, request_t request, requestType_t type,
 
 
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, NULL); // Clear POST data
-  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, NULL);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&responseChunks);
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, NULL); //Clear header (needs to be setup manualy for POST + dictionary download)
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&responseChunks); //Specify HTTP response buffer
 
   if (confOpts.dictDwl != 1) {
   header = curl_slist_append(header, "Accept: application/vnd.openapi+json");
@@ -32,7 +32,9 @@ int requestHelper(CURL *curl, request_t request, requestType_t type,
     break;
 
   case GET_id:
-    curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+  //Present to force to GET if POST has been used before, 
+  //removing it makes  curl sometime use POST instead of GET
+    curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); 
 
     curl_easy_setopt(
         curl, CURLOPT_URL,
@@ -49,7 +51,7 @@ int requestHelper(CURL *curl, request_t request, requestType_t type,
 
     break;
   case PATCH:
-
+    // PATCH needs specific header, if not present function fails
     header =
         curl_slist_append(header, "Content-Type: application/merge-patch+json");
     curl_easy_setopt(
@@ -62,6 +64,7 @@ int requestHelper(CURL *curl, request_t request, requestType_t type,
 
     break;
   case POST:
+    //Force header to be sure that it is set
     header = curl_slist_append(header, "Content-Type: application/json");
     curl_easy_setopt(curl, CURLOPT_URL,
                      urlConstructor(confOpts.url, request.type, NULL, type));

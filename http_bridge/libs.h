@@ -19,13 +19,20 @@ struct responseBuffer {
 };
 typedef struct responseBuffer responseBuffer_t;
 // Global func defines
+struct formatedResponse {
+  char *key;
+  char *value;
+  u_int size;
+};
+typedef struct formatedResponse formatedResponse_t;
+typedef formatedResponse_t *pformatedResponse_t;
 
 // config.c
 int config(CURL *curl, fileLoadOpts_t options);
 size_t write_chunk(void *data, size_t size, size_t nmemb, void *userData);
 int loader(const char *envFile, fileLoadOpts_t *options);
 // response_helper.c
-char* responseFormatter(responseBuffer_t *input);
+pformatedResponse_t responseFormatterAdvanced(responseBuffer_t *input);
 int responseHelper(responseBuffer_t *input, fileLoadOpts_t confOpts,
                    requestType_t type, char *requestPath);
 cJSON* JSONPathTraverser(cJSON *json, char *path, requestType_t type);

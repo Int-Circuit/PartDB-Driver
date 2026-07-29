@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <ctype.h>
 
 struct APIJSONLink {
   const char *APIPath[2];
@@ -17,30 +16,32 @@ APIJSONLink_t AJL = {{
                          "parts",
                      },
                      {"Category", "Part"}}; // 23 paths, a completer peu a peu
+// Request Path and JSON schema matching
 char *JSONPathFormatter(char *requestPath) {
   char *JSONFullPath = NULL;
   if (!requestPath) {
     fprintf(stderr, "Failed to get request path");
     return NULL;
   }
-  for (int i = 0; i < (sizeof(AJL.APIPath)/ sizeof(AJL.APIPath[0])); i++) {
+  // checks if request path is correct and sets correct schema
+  for (u_int i = 0; i < (sizeof(AJL.APIPath) / sizeof(AJL.APIPath[0])); i++) {
     if (strcmp(requestPath, AJL.APIPath[i]) == 0) {
 
       asprintf(&JSONFullPath, "%s.%s", "schemas", AJL.JSONKeys[i]);
-      //printf("%s", JSONFullPath);
+      // printf("%s", JSONFullPath);
       return JSONFullPath;
     }
   }
   return NULL;
 }
-char* DictDwl(responseBuffer_t* input)
-{
-    cJSON *output = cJSON_CreateObject();
+char *responseFormatterSimple(responseBuffer_t *input, int isDictdwld) {
+  cJSON *output = cJSON_CreateObject();
   char *charOutput = NULL;
   if (!input) {
     fprintf(stderr, "Request response buffer empty");
     return NULL;
   }
+  // adding response to JSON object
   output = cJSON_Parse(input->response);
   if (!output) {
     const char *error = cJSON_GetErrorPtr();
@@ -53,7 +54,8 @@ char* DictDwl(responseBuffer_t* input)
     cJSON_Delete(output);
     output = NULL;
   }
-      FILE *fp = fopen("docs.jsonopenapi", "w");
+  if (isDictdwld != 1) {
+    FILE *fp = fopen("docs.jsonopenapi", "w");
     if (!fp) {
       fprintf(stderr, "Cannot open/create file to write");
       return NULL;
@@ -67,10 +69,20 @@ char* DictDwl(responseBuffer_t* input)
       return NULL;
     }
     fclose(fp);
+  }
+  return NULL;
 }
-char* responseFormatter(responseBuffer_t *input) {
+pformatedResponse_t responseFormatterAdvanced(responseBuffer_t *input) {
   cJSON *output = cJSON_CreateObject();
   char *charOutput = NULL;
+  char *charOutputStart = NULL;
+  char *CharOutputEnd = NULL;
+  char **formattedOutput;
+  char *key;
+  char *value;
+  int count = 0;
+  pformatedResponse_t Format;
+  
   if (!input->response || !input) {
     fprintf(stderr, "Request response buffer empty");
     return NULL;
@@ -79,29 +91,68 @@ char* responseFormatter(responseBuffer_t *input) {
   if (!output) {
     const char *error = cJSON_GetErrorPtr();
     fprintf(stderr, "Error %.30s", error);
-    goto destroy;
+    free(charOutput);
+    return NULL;
   }
+
   charOutput = cJSON_Print(output);
   if (!charOutput) {
     fprintf(stderr, "JSON print failed");
     cJSON_Delete(output);
     output = NULL;
   }
-  char* charOutputStart = strchr(charOutput, '{');
-  char* CharOutputEnd = strrchr(charOutput, '}');
+  // remove spaces + braces
+  cJSON_Minify(charOutput);
+  charOutputStart = strstr(charOutput, "[{");
+  CharOutputEnd = strstr(charOutput, "}]");
   if (charOutputStart && CharOutputEnd && CharOutputEnd > charOutputStart) {
-    charOutputStart++;
-    *CharOutputEnd = '\0';
-    memmove(charOutput, charOutputStart, strlen(charOutputStart));
-  }
-  // for (int i = (strchr(charOutput, '"')) - charOutput; i < (strchr(charOutput, ',')) - charOutput; i++) {
-  //   printf("string found between %d and %d", )
-  // }
+    charOutputStart += 2;
 
-  return charOutput;
-destroy:
-  free(charOutput);
-  return NULL;
+    size_t lenght = CharOutputEnd - charOutputStart;
+    memmove(charOutput, charOutputStart, lenght);
+    charOutput[lenght] = '\0';
+  }
+
+  char *charCount = charOutput;
+
+  while ((charCount = strchr(charCount, ',')) != NULL) {
+    charCount++;
+    count++;
+  }
+  formattedOutput = calloc(count + 1, sizeof(char *));
+  Format = malloc((count+1) * sizeof(formatedResponse_t));
+  char *token = strtok(charOutput, ",");
+  for (int i = 0; i < count && token; i++) {
+    formattedOutput[i] = strdup(token);
+    token = strtok(NULL, ",");
+  }
+  for (int i = 0; i < count; i++) {
+    key = strchr(formattedOutput[i], ':');
+    if (key != NULL) {
+      // Temporarily split the string by replacing ':' with '\0', allows to
+      // separate key from value since format is "key":"value"
+      *key = '\0';
+
+      Format[i].key = strdup(formattedOutput[i]);
+      Format[i].value = strdup(key + 1); // Value starts right after the colon
+
+      //printf("key: %s - value: %s\n", Format[i].key, Format[i].value);
+    } else {
+      // Handle case where colon is missing
+      Format[i].key = strdup(formattedOutput[i]);
+      Format[i].value = strdup("");
+      printf("Key + values not written properly\n");
+    }
+  }
+  Format->size = count;
+  if (formattedOutput) {
+    for (int j = 0; j < count; j++) {
+      free(formattedOutput[j]);
+    }
+    free(formattedOutput);
+  }
+
+  return Format;
 }
 // utiliser le jsonopenapi
 int responseHelper(responseBuffer_t *input, fileLoadOpts_t confOpts,
@@ -110,46 +161,22 @@ int responseHelper(responseBuffer_t *input, fileLoadOpts_t confOpts,
     fprintf(stderr, "Request response buffer empty");
     return EXIT_FAILURE;
   }
-    if (confOpts.dictDwl != 1) {
-    DictDwl(input);
+  if (confOpts.dictDwl != 1) {
+    responseFormatterSimple(input, confOpts.dictDwl);
     return EXIT_SUCCESS;
   }
-  char* out = responseFormatter(input);
+  pformatedResponse_t out = responseFormatterAdvanced(input);
   if (!out) {
-     return EXIT_FAILURE;
+    return EXIT_FAILURE;
   }
 
-  printf("%s", out);
-  int outDepth;
-  //char* outFind = out;
-//   while ((outFind = strchr(outFind, ',')) != NULL) {
-//     outDepth++;
-//     ++outFind;
-//   }
-// char* outKeyBuffer[outDepth];
-// char* outValBuffer[outDepth];
-// char* tokenSave;
-// char* outTokenize = strtok_r(out, ",", &tokenSave);
-//  for (int i = 0; i < outDepth && outTokenize != NULL; i++) {
-//     char* split = strchr(outTokenize, ':');
-//     if (split != NULL) {
-//       *split = '\0';
-//       outKeyBuffer[i] = outTokenize;
-//       outValBuffer[i] = split + 1;
-//     }
-//     else {
-//       outKeyBuffer[i] = outTokenize;
-//       outValBuffer[i] = "";
-//     }
-//   outTokenize = strtok_r(NULL, ",", &tokenSave);
-   
-// //   outBuffer[i] = strdup(outTokenize);
- 
-// //     outTokenize = strtok(NULL, ",");
-//     printf("\nKey: %s | Val: %s\n", outKeyBuffer[i], outValBuffer[i]);
-//  }
+  for (u_int i = 0; i < out->size; i++) {
+      printf("%s %s %d\n", out[i].key, out[i].value, (out->size-i));
+  }
 
-  // Parse the JSON data
+
+  // Parse the minimized JSON 'schema' data
+  // Produced from dictionary.c
   cJSON *json = cJSON_Parse(readJSON("write.json"));
   // Check if parsing was successful
   if (!json) {
@@ -168,8 +195,8 @@ int responseHelper(responseBuffer_t *input, fileLoadOpts_t confOpts,
   }
   if (JSONPathTraverser(json, format, type) != NULL) {
     char *res = cJSON_Print(JSONPathTraverser(json, format, type));
-    //printf("\ndico\n");
-   // printf("%s", res);
+    // printf("\ndico\n");
+    // printf("%s", res);
   }
 
   // fileLoadOpts_t confOpts = {0};
@@ -177,12 +204,14 @@ int responseHelper(responseBuffer_t *input, fileLoadOpts_t confOpts,
   // printf("%d", confOpts.dictDwl);
   return EXIT_SUCCESS;
 }
+// Traverse JSON file to correct element
 cJSON *JSONPathTraverser(cJSON *json, char *path, requestType_t type) {
   char *pathCopy;
   char *pathFindChar = NULL;
   int pathDepth = 0;
   char **pathArray;
   char *pathTokenized = NULL;
+  cJSON *JSONContainer = json;
 
   switch (type) {
   default:
@@ -223,9 +252,9 @@ cJSON *JSONPathTraverser(cJSON *json, char *path, requestType_t type) {
     }
     pathTokenized = strtok(NULL, ".");
   }
-  cJSON *JSONContainer = json;
+  JSONContainer = json;
   for (int i = 0; i < pathDepth + 1; i++) {
-    //printf("\n%s\n", pathArray[i]);
+    // printf("\n%s\n", pathArray[i]);
     JSONContainer =
         cJSON_GetObjectItemCaseSensitive(JSONContainer, pathArray[i]);
     if (!JSONContainer) {
@@ -233,7 +262,6 @@ cJSON *JSONPathTraverser(cJSON *json, char *path, requestType_t type) {
               pathArray[i]);
       break;
     }
-
   }
 
 destroy:
